@@ -1,14 +1,16 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/tauri";
-import reactLogo from "./assets/react.svg";
 import { useState } from "react";
+import { Display } from "./types/ScreenshotTypes";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
   const [name, setName] = useState("");
 
   const [image, setImage] = useState("");
+
+  const [screens, setScreens] = useState<Display>([]);
 
   async function greet() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -21,46 +23,55 @@ function App() {
     setImage(screenshot as string);
   }
 
+  const getScreens = async () => {
+    const screens = await invoke("get_available_screens");
+
+    const screensArray = [];
+
+    for (const screen of JSON.parse(screens)) {
+      screensArray.push({
+        ...screen,
+        isPrimary: screen.is_primary,
+      });
+    }
+
+    setScreens(screensArray as Display[]);
+  };
+
   return (
-    <div className="container">
-      <h1>Welcome to Tauri!</h1>
+    <div className="bg-slate-900 min-h-screen flex flex-col items-center justify-center text-white p-8">
+      <div className="container center">
+        <h1>Welcome to Eevie!</h1>
 
-      <div className="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        {image && <img src={image} />}
+
+        <div>
+          <button onClick={screenshot}>Capture Screenshot</button>
+        </div>
+
+        <div className="row">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              greet();
+            }}
+          >
+            <input
+              id="greet-input"
+              onChange={(e) => setName(e.currentTarget.value)}
+              placeholder="Enter a name..."
+            />
+            <button type="submit">Greet</button>
+          </form>
+        </div>
+        <div>
+          <button onClick={getScreens}>Get Screens</button>
+        </div>
+        <p>{greetMsg}</p>
       </div>
 
-      {image && <img src={image} />}
-
-      <div>
-        <button onClick={screenshot}>Capture Screenshot</button>
-      </div>
-
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <div className="row">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            greet();
-          }}
-        >
-          <input
-            id="greet-input"
-            onChange={(e) => setName(e.currentTarget.value)}
-            placeholder="Enter a name..."
-          />
-          <button type="submit">Greet</button>
-        </form>
-      </div>
-      <p>{greetMsg}</p>
+      <h4>Available Screens</h4>
+      <p>{JSON.stringify(screens, null, 2)}</p>
     </div>
   );
 }
