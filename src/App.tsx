@@ -26,7 +26,8 @@ function App() {
 
   const registerShortcut = async () => {
     if (screens.length == 0) {
-      const displays = await invoke("getDisplays");
+      const displays = await invoke("get_available_screens");
+      console.log(displays);
       setScreens(displays);
     }
 
@@ -59,6 +60,7 @@ function App() {
     });
 
     setImage(screenshot as string);
+    console.log(screenshot);
   }
 
   const getScreens = async () => {
@@ -77,7 +79,7 @@ function App() {
   };
 
   useEffect(() => {
-    registerShortcut();
+    // registerShortcut();
   }, [screens]);
 
   return (
