@@ -1,7 +1,12 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/tauri";
-import { useState } from "react";
+import {
+  isRegistered,
+  register,
+  unregister,
+} from "@tauri-apps/api/globalShortcut";
+import { useEffect, useState } from "react";
 import { Display } from "./types/ScreenshotTypes";
 
 function App() {
@@ -16,6 +21,32 @@ function App() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
     setGreetMsg(await invoke("greet", { name }));
   }
+
+  const baseShortCut = "CmdOrCtrl+Shift+Alt+";
+
+  const registerShortcut = async () => {
+    if (screens.length == 0) {
+      const displays = await invoke("getDisplays");
+      setScreens(displays);
+    }
+
+    console.log(screens);
+
+    screens.forEach(async (screen, index) => {
+      const key = baseShortCut + (index + 1);
+      const alreadyRegistered = await isRegistered(key);
+      if (alreadyRegistered) {
+        await unregister(key);
+      }
+      await register(key, async () => {
+        console.log(`Shortcut ${key} pressed!`);
+        const screenshot = await invoke("capture_screenshot", {
+          id: screen.id.toString(),
+        });
+        setImage(screenshot);
+      });
+    });
+  };
 
   async function screenshot(id: string) {
     console.log(screens);
@@ -35,7 +66,7 @@ function App() {
 
     const screensArray = [];
 
-    for (const screen of JSON.parse(screens)) {
+    for (const screen of JSON.parse(screens as string)) {
       screensArray.push({
         ...screen,
         isPrimary: screen.is_primary,
@@ -44,6 +75,10 @@ function App() {
 
     setScreens(screensArray as Display[]);
   };
+
+  useEffect(() => {
+    registerShortcut();
+  }, [screens]);
 
   return (
     <div className="bg-slate-900 min-h-screen flex flex-col items-center justify-center text-white p-8">
