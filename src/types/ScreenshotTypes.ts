@@ -4,4 +4,5 @@ export interface Display {
   x: number;
   y: number;
   isPrimary: boolean;
+  id: number;
 }

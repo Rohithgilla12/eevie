@@ -10,15 +10,22 @@ function App() {
 
   const [image, setImage] = useState("");
 
-  const [screens, setScreens] = useState<Display>([]);
+  const [screens, setScreens] = useState<Display[]>([]);
 
   async function greet() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
     setGreetMsg(await invoke("greet", { name }));
   }
 
-  async function screenshot() {
-    const screenshot = await invoke("capture_screenshot");
+  async function screenshot(id: string) {
+    console.log(screens);
+    if (screens.length === 0) {
+      return;
+    }
+
+    const screenshot = await invoke("capture_screenshot", {
+      id: id.toString(),
+    });
 
     setImage(screenshot as string);
   }
@@ -45,9 +52,7 @@ function App() {
 
         {image && <img src={image} />}
 
-        <div>
-          <button onClick={screenshot}>Capture Screenshot</button>
-        </div>
+        <div></div>
 
         <div className="row">
           <form
@@ -69,9 +74,13 @@ function App() {
         </div>
         <p>{greetMsg}</p>
       </div>
-
       <h4>Available Screens</h4>
-      <p>{JSON.stringify(screens, null, 2)}</p>
+      {screens.map((screen) => (
+        <div key={screen.id}>
+          <p>{JSON.stringify(screen, null, 2)}</p>
+          <button onClick={() => screenshot(screen.id)}>Capture</button>
+        </div>
+      ))}
     </div>
   );
 }

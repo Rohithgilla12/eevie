@@ -5,8 +5,6 @@ use std::error::Error;
 use base64::encode;
 use screenshots::Screen;
 use image::ImageFormat;
-use std::io::Cursor;
-use std::thread;
 use std::time::Duration;
 use serde_json::json;
 
@@ -18,19 +16,27 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-fn capture_screenshot() -> Result<String, String> {
+fn capture_screenshot(id: &str) -> Result<String, String> {
+    println!("id: {:?}", id);
     // Get the list of screens
-    // let screens = get_screens()?;
     let screens = Screen::all().unwrap();
 
     // Check if there's at least one screen
     if screens.is_empty() {
         return Err("No screens found".to_string());
     }
-    // Capture the screenshot of the primary screen
-    let screen = Screen::from_point(0, 0).unwrap();
 
-    let image = screen.capture_area(0,0, screen.display_info.width, screen.display_info.height).unwrap();
+    let converted_id = id.parse::<u32>().unwrap();
+    println!("converted_id: {:?}", converted_id);
+
+    // Capture the screenshot of the primary screen
+
+    let selected_screen = screens.iter().find(|screen| screen.display_info.id == converted_id).unwrap();
+    println!("selected_screen: {:?}", selected_screen);
+
+
+    let image = selected_screen.capture().unwrap();
+
     let buffer = image.buffer();
     let screenshot_data = format!("data:image/png;base64,{}", base64::encode(buffer));
 
@@ -46,6 +52,8 @@ fn get_available_screens() -> Result<String, String> {
         return Err("No screens found".to_string());
     }
 
+    println!("screens: {:?}", screens);
+
     let mut screen_list = Vec::new();
     for screen in screens {
         let screen_info = json!({
@@ -54,6 +62,7 @@ fn get_available_screens() -> Result<String, String> {
             "width": screen.display_info.width,
             "height": screen.display_info.height,
             "is_primary": screen.display_info.is_primary,
+            "id": screen.display_info.id,
         });
         screen_list.push(screen_info);
     }
